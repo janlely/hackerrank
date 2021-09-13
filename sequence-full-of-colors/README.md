@@ -1,0 +1,1 @@
+# sequence-full-of-colors
