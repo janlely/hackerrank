@@ -8,21 +8,20 @@ import Data.Maybe
 import Control.Monad
 import Debug.Trace
 
-nsum :: Int -> Int -> [Int] -> [Maybe [Int]]
-nsum n t [] = []
-nsum n t (x:xs) = f (n-1) (t-x) [x] xs ++ nsum n t xs
-    where f 0 0 hs _     = [Just hs]
-          f 0 _ _ _      = [Nothing]
-          f _ _ _ []     = [Nothing]
-          f n' t' hs xs' = g hs <$> nsum n' t' xs'
+nsum :: Int -> [Int] -> [Maybe [Int]]
+nsum t [] = []
+nsum t (x:xs) = f (t-x) [x] xs ++ nsum t xs
+    where f 0 hs _     = [Just hs]
+          f _ _ []     = [Nothing]
+          f t' hs xs' = if t' > 0
+                           then g hs <$> nsum t' xs'
+                           else [Nothing]
           g hs (Just ts) = Just $ hs ++ ts 
           g hs Nothing = Nothing
 
 solve :: Int -> Int -> Int
-solve x n = foldl' f 0 [1..m]
+solve x n = length (catMaybes $ nsum x xs)
     where xs = L.takeWhile (<= x) $ (^ n) <$> [1..]
-          m = length $ fromJust $ L.find ((>= x) . sum) $ L.inits xs
-          f ans i = ans + length (catMaybes $ nsum i x xs)
 
 someFunc = do
     x <- read <$> getLine
