@@ -1,0 +1,114 @@
+{-# OPTIONS_GHC -O2 -optc-O2 #-}
+module Lib
+    ( someFunc
+    ) where
+
+import Control.Monad
+import Data.Array
+import Data.Function (on)
+import Data.List (sort, sortBy)
+import qualified Data.Graph as G
+import Debug.Trace
+
+type EmployeeId = Int
+
+data EmployeeTree = Node EmployeeId Int [EmployeeTree]
+  deriving (Show)
+
+buildTree :: G.Graph -> EmployeeId -> EmployeeTree
+buildTree g u = Node u (ss + 1) vs
+  where vs = map (buildTree g) (g ! u)
+        ss = sum $ map (\(Node _ s _) -> s) vs
+
+preOrder :: EmployeeTree -> [(EmployeeId, Int)]
+preOrder t = preOrder' t []
+  where preOrder' :: EmployeeTree -> ([(EmployeeId, Int)] -> [(EmployeeId, Int)])
+        preOrder' (Node u 1 []) = ((u, 1):)
+        preOrder' (Node u ss vs) = foldl (.) ((u, ss):) (map preOrder' vs)
+
+data SegTree = SegNode {
+    leftChild :: SegTree,
+    rightChild :: SegTree,
+    value :: Int,
+    bnds :: (Int, Int)
+    } | Leaf {
+            value :: Int,
+            bnds :: (Int, Int) }
+
+instance Show SegTree where
+    show tr = let show' (Leaf v b) n = replicate n ' ' ++ "value: " ++ show v ++ "\n" ++ replicate n ' ' ++ "bnds: " ++ show b
+                  show' (SegNode l r v b) n = replicate n ' ' ++ "value: " ++ show v ++ "\n" ++ replicate n ' ' ++ "bnds: " ++ show b ++ "\n" ++ show' l (n+4) ++ "\n" ++ show' r (n+4)
+               in show' tr 0
+    
+    
+
+emptySegTree :: (Int, Int) -> SegTree
+emptySegTree bnds@(lo, hi) | lo + 1 == hi = Leaf 0 bnds
+                           | otherwise = makeSegNode lc rc
+  where mi = div (lo + hi) 2
+        lc = emptySegTree (lo, mi)
+        rc = emptySegTree (mi, hi)
+
+makeSegNode :: SegTree -> SegTree -> SegTree
+makeSegNode lc rc = SegNode lc rc (value lc + value rc) (lo, hi)
+  where (lo, _) = bnds lc
+        (_, hi) = bnds rc
+
+updateSegTree :: SegTree -> Int -> Int -> SegTree
+updateSegTree l@(Leaf _ ix) _ v = l { value = v }
+updateSegTree (SegNode lc rc _ (lo, hi)) ix v | ix < mi = makeSegNode (updateSegTree lc ix v) rc
+                                              | otherwise = makeSegNode lc (updateSegTree rc ix v)
+  where mi = div (lo + hi) 2
+
+kthElement :: SegTree -> SegTree -> Int -> Int
+kthElement (Leaf _ _) (Leaf _ (ix, _)) 1 = ix
+kthElement ft st k | vflc + k <= vslc = kthElement (leftChild ft) (leftChild st) k
+                   | otherwise        = kthElement (rightChild ft) (rightChild st) (k - vslc + vflc)
+  where vflc = value $ leftChild ft
+        vslc = value $ leftChild st
+
+getIx :: Array Int Int -> Int -> Int
+getIx arr v | v == arr ! hi = hi
+            | otherwise     = getIx' lo hi
+  where (lo, hi) = bounds arr
+        getIx' lo hi | lo + 1 == hi = lo
+                     | v < arr ! mi = getIx' lo mi
+                     | otherwise    = getIx' mi hi
+          where mi = div (lo + hi) 2
+
+someFunc = do
+  [n, q] <- fmap read . words <$> getLine
+  let bounds = (1, n)
+  g <- liftM (G.buildG bounds) . replicateM (n - 1) $ do
+    [id, pid] <- fmap read . words <$> getLine
+    return (pid, id)
+  let t = buildTree g 1
+
+  -- preorder list of all employees + array which maps employee ids to indices in the employee list
+  let es  = listArray bounds $ preOrder t
+      res = array bounds . sortBy (compare `on` fst) . map (\(a, (b, _)) -> (b, a)) $ assocs es
+  
+  -- list of salaries
+  ss <- fmap read . words <$> getLine
+
+  -- as is just an array of salaries, st is a sorted array of salaries.
+  let as = listArray bounds ss
+      st = listArray bounds (sort ss)
+      si = listArray bounds . map fst . sortBy (compare `on` snd) $ zip [1..] ss
+
+  let trees = listArray (0, n) $ scanl (\t id -> let ix = (getIx st $ as ! id) in updateSegTree t ix 1) (emptySegTree (1, n + 1)) (map fst $ elems es)
+  
+  let processQueries :: [(Int, Int)] -> Int -> IO ()
+      processQueries [] _ = return ()
+      processQueries ((v, k):qs) d = do let from = res ! (v + d)
+                                            subs = snd (es ! from)
+                                            to   = from + subs - 1
+                                            val  = (kthElement (trees ! from) (trees ! to) k)
+                                            result  = si ! val
+                                        print result
+                                        processQueries qs result
+  qs <- replicateM q $ do
+    [v, k] <- liftM (map read . words) getLine
+    return (v, k)
+  -- sequence $ putStrLn . show <$> elems trees
+  processQueries qs 0
