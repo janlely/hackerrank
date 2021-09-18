@@ -3,18 +3,13 @@ module Lib
     ) where
 
 
-import Data.Map.Strict as M
-import Data.Maybe
 import Data.List as L
 import qualified Control.Monad.State.Strict as SS
 import Control.Monad.IO.Class (liftIO)
 import Control.Monad
-import Debug.Trace
-import Data.Bifunctor (first)
 import qualified Data.Graph as G
 import Data.Ord (comparing)
 import Data.DList as D
-
 import Data.Array as A
 
 data EmpTree = EmpNode Int Int [EmpTree] deriving Show
