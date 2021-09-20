@@ -1,0 +1,32 @@
+{-# LANGUAGE MultiWayIf #-}
+module Lib
+    ( someFunc
+    ) where
+
+import Control.Monad
+import qualified Data.List as L
+import Data.Heap as H
+import qualified Data.Array as A
+import Data.Maybe
+
+buildHeaps:: [(Int, Int)] -> A.Array Int (H.MaxHeap Int, H.MinHeap Int)
+buildHeaps qs = res 
+    where trs = L.scanl f (H.empty :: H.MaxHeap Int, H.empty :: H.MinHeap Int) qs
+          res = A.listArray (0, length qs) trs
+          f (maxh, minh) (i,v)
+            | v > 0 = if | H.size minh' > H.size maxh'     -> let item = fromJust $ H.viewHead minh' in (H.insert item maxh', H.drop 1 minh') 
+                         | H.size maxh' - H.size minh' > 1 -> let item = fromJust $ H.viewHead maxh' in (H.drop 1 maxh', H.insert item minh')
+                         | otherwise                       -> (maxh', minh')
+            | otherwise = res A.! (i+v)
+                where (maxh', minh') = if | H.isEmpty minh -> (maxh, H.insert v minh)
+                                          | H.isEmpty maxh -> (H.insert v maxh, minh)
+                                          | v < fromJust (H.viewHead minh) -> (H.insert v maxh, minh)
+                                          | otherwise                      -> (maxh, H.insert v minh)
+          
+
+someFunc = do
+    t <- read <$> getLine
+    qs <- replicateM t $ read <$> getLine
+    let sqs = zip [1..] $ (L.nub . L.sort . L.filter (>0)) qs
+        heaps = buildHeaps $ zip [1..] qs
+    forM [1..t] (\n -> print $ (fromJust . H.viewHead . fst . (heaps A.!)) n) 

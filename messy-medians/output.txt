@@ -1,0 +1,134 @@
+heap:
+
+
+
+heap:
+value: 1000093
+left: 
+right: 
+
+
+
+heap:
+value: 1000080
+left: 
+right: 
+
+value: 1000093
+left: 
+right: 
+
+
+heap:
+value: 1000080
+left: 
+    value: 1000055
+    left: 
+    right: 
+    right: 
+
+value: 1000093
+left: 
+right: 
+
+
+heap:
+value: 1000080
+left: 
+    value: 1000055
+    left: 
+    right: 
+    right: 
+
+value: 1000092
+left: 
+    value: 1000093
+    left: 
+    right: 
+    right: 
+
+
+heap:
+value: 1000080
+left: 
+    value: 1000039
+    left: 
+    right: 
+    right: 
+    value: 1000055
+    left: 
+    right: 
+    
+value: 1000092
+left: 
+    value: 1000093
+    left: 
+    right: 
+    right: 
+
+
+heap:
+value: 1000080
+left: 
+    value: 1000039
+    left: 
+    right: 
+    right: 
+    value: 1000055
+    left: 
+    right: 
+    
+value: 1000092
+left: 
+    value: 1000093
+    left: 
+    right: 
+    right: 
+
+
+heap:
+value: 1000080
+left: 
+    value: 1000055
+    left: 
+    right: 
+    right: 
+
+value: 1000092
+left: 
+    value: 1000093
+    left: 
+    right: 
+    right: 
+
+
+heap:
+value: 1000080
+left: 
+    value: 1000055
+    left: 
+    right: 
+    right: 
+
+value: 1000093
+left: 
+right: 
+
+
+heap:
+value: 1000080
+left: 
+right: 
+
+value: 1000093
+left: 
+right: 
+
+
+heap:
+value: 1000093
+left: 
+right: 
+
+
+

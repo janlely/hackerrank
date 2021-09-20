@@ -1,0 +1,68 @@
+module Lib
+    ( someFunc
+    ) where
+
+
+import Control.Monad
+import Data.Map as M
+import qualified Data.List as L
+import qualified Data.Array as A
+-- import Debug.Trace
+
+
+data SegTree = SegNode {value :: Int, section :: (Int, Int), left :: SegTree, right :: SegTree} | SegLeaf {value :: Int, end :: Int}
+
+instance Show SegTree where
+    show tr = show' tr 0
+        where show' (SegLeaf v e) n = replicate n ' ' ++ "value: " ++ show v ++ "\n" ++ replicate n ' ' ++ "end: " ++ show e
+              show' (SegNode v s l r) n = replicate n ' ' ++ "value: " ++ show v ++ "\n" ++ replicate n ' ' ++ "section: " ++ show s ++ "\n" ++ show' l (n+4) ++ "\n" ++ show' r (n+4)
+
+emptySegTree :: Int -> Int -> SegTree 
+emptySegTree i j
+  | i == j = SegLeaf 0 i
+  | otherwise = SegNode 0 (i,j) (emptySegTree i mi) (emptySegTree (mi+1) j)
+  where mi = div (i + j) 2
+
+updateSegTree :: SegTree -> Int -> SegTree
+updateSegTree (SegLeaf v' _) i  = SegLeaf (v' + 1) i
+updateSegTree (SegNode _ (m, n) l r) i
+  | i <= mi   = (SegNode (value l' + vr) (m, n) l' r)
+  | otherwise = (SegNode (value r' + vl) (m, n) l r')
+  where mi = div (m + n) 2
+        vl = value l
+        vr = value r
+        l' = updateSegTree l i
+        r' = updateSegTree r i
+
+findMid :: SegTree -> Int -> Int
+-- findMid (SegLeaf _ e) _ = trace ("found: " ++ show e) e
+findMid (SegLeaf _ e) _ = e
+findMid (SegNode v (i,j) l r) t
+  | lv >= t = findMid l t 
+  | otherwise = findMid r (t-lv)
+  where lv = value l
+
+findMid' :: SegTree -> Int
+-- findMid' tr = trace ("segTree:\n" ++ show tr) findMid tr t
+findMid' tr = findMid tr t
+    where v = value tr
+          t = div (v+1) 2
+
+buildSegTrees :: M.Map Int Int -> [Int] -> A.Array Int SegTree
+buildSegTrees qm qs = res 
+    where trs = L.scanl f (emptySegTree 1 (M.size qm)) $ zip [1..] qs
+          res = A.listArray (0, length qs) trs
+          f tr (s, q)
+            | q > 0 = updateSegTree tr (qm M.! q)
+            | otherwise = res A.! (s+q)
+          
+
+someFunc = do
+    t <- read <$> getLine
+    qs <- replicateM t $ read <$> getLine
+    let sqs = zip [1..] $ (L.nub . L.sort . L.filter (>0)) qs
+        qm = M.fromList $ (\(a,b) -> (b,a)) <$> sqs
+        sqsa = A.array (1, length sqs) sqs
+        segTrees = buildSegTrees qm qs
+    forM [1..t] (\n -> print $ (sqsa A.!) $ findMid' (segTrees A.! n))
+    -- forM [1..t] (\n -> print $ value $ segTrees A.! n)
