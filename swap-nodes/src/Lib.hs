@@ -9,22 +9,22 @@ import Data.Array as A
 import Data.IORef (newIORef, modifyIORef, readIORef)
 
 
-newtype DList a = UnsafeDList {unsafeApplyDList :: [a] -> [a]}
-
-toDList :: [a] -> DList a
-toDList = UnsafeDList . (++)
-
-appendDList :: DList a -> DList a -> DList a
-appendDList xs ys = UnsafeDList $ unsafeApplyDList xs . unsafeApplyDList ys
-
-toNormalList :: DList a -> [a]
-toNormalList = ($ []) . unsafeApplyDList
-
-singleton :: a -> DList a
-singleton = UnsafeDList . (:)
-
-emptyDList :: DList a
-emptyDList = UnsafeDList id
+-- newtype DList a = UnsafeDList {unsafeApplyDList :: [a] -> [a]}
+--
+-- toDList :: [a] -> DList a
+-- toDList = UnsafeDList . (++)
+--
+-- appendDList :: DList a -> DList a -> DList a
+-- appendDList xs ys = UnsafeDList $ unsafeApplyDList xs . unsafeApplyDList ys
+--
+-- toNormalList :: DList a -> [a]
+-- toNormalList = ($ []) . unsafeApplyDList
+--
+-- singleton :: a -> DList a
+-- singleton = UnsafeDList . (:)
+--
+-- emptyDList :: DList a
+-- emptyDList = UnsafeDList id
 
 data Tree
     = Leaf
@@ -50,12 +50,19 @@ exchange (TreeNode v d l r) k = if mod d k == 0
                                    then TreeNode v d (exchange r k) (exchange l k)
                                    else TreeNode v d (exchange l k) (exchange r k)
 
-inorder :: Tree -> [Int]
-inorder tr = toNormalList $ inorder' tr
+-- inorder :: Tree -> [Int]
+-- inorder tr = toNormalList $ inorder' tr
+--
+-- inorder' :: Tree -> DList Int
+-- inorder' Leaf = emptyDList
+-- inorder' (TreeNode v _ l r) = inorder' l `appendDList` (singleton v) `appendDList` inorder' r
 
-inorder' :: Tree -> DList Int
-inorder' Leaf = emptyDList
-inorder' (TreeNode v _ l r) = inorder' l `appendDList` (singleton v) `appendDList` inorder' r
+
+inorder :: Tree -> [Int]
+inorder Leaf = []
+inorder tr = inorder' tr [] 
+    where inorder' Leaf = id
+          inorder' (TreeNode v _ l r) = inorder' l . (v:) . inorder' r
 
 query :: [Int] -> Tree -> IO ()
 query [] _ = return ()
