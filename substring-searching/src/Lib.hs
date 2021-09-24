@@ -29,7 +29,7 @@ kmpSearch src dest next = kmpSearch' next src lb dest lb'
                  -- in nextI' src res' (i+1)
   -- where (lb, rb) = A.bounds src
 nextI :: A.Array Int Char -> A.Array Int Int
-nextI src = init A.// (L.foldl' f [(lb,0),(lb+1,0)] [lb+2..rb])
+nextI src = init A.// (L.foldl' f [(lb,0)] [lb+1..rb])
   where (lb, rb) = A.bounds src
         init = A.listArray (lb, rb) (repeat 0)
         f res@((_,n):_) i = if (src A.! (lb+n)) == (src A.! i) then (i,n+1):res else (i,0):res
