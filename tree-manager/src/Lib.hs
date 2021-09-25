@@ -45,20 +45,21 @@ delete :: Zipper a -> Zipper a
 delete (cur, []) = (Empty, [])
 delete (cur, (Crumb a l r):bs) = (Node a (l++r), bs)
 
+query :: [[String]] -> Zipper String -> IO ()
+query [] _ = return ()
+query (("change":v:[]):is) tr = query is (changeValue tr v)
+query (("print":[]):is) tr = putStrLn (printValue tr) >> query is tr 
+query (("visit":"left":[]):is) tr = query is (visitLeft tr)
+query (("visit":"right":[]):is) tr = query is (visitRight tr)
+query (("visit":"parent":[]):is) tr = query is (visitParent tr)
+query (("visit":"child":n:[]):is) tr = query is (visitChild tr (read n))
+query (("insert":"left":x:[]):is) tr = query is (insertLeft tr x)
+query (("insert":"right":x:[]):is) tr = query is (insertRight tr x)
+query (("insert":"child":x:[]):is) tr = query is (insertChild tr x)
+query (("delete":[]):is) tr = query is (delete tr)
+
 someFunc = do
     n <- read <$> getLine
     let tr = (Node "0" [], [])
     inputs <- replicateM n $ words <$> getLine
-    let query :: [[String]] -> Zipper String -> IO ()
-        query [] _ = return ()
-        query (("change":v:[]):is) tr = query is (changeValue tr v)
-        query (("print":[]):is) tr = putStrLn (printValue tr) >> query is tr 
-        query (("visit":"left":[]):is) tr = query is (visitLeft tr)
-        query (("visit":"right":[]):is) tr = query is (visitRight tr)
-        query (("visit":"parent":[]):is) tr = query is (visitParent tr)
-        query (("visit":"child":n:[]):is) tr = query is (visitChild tr (read n))
-        query (("insert":"left":x:[]):is) tr = query is (insertLeft tr x)
-        query (("insert":"right":x:[]):is) tr = query is (insertRight tr x)
-        query (("insert":"child":x:[]):is) tr = query is (insertChild tr x)
-        query (("delete":[]):is) tr = query is (delete tr)
     query inputs tr
